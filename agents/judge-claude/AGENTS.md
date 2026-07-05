@@ -62,27 +62,29 @@ or judge-gpt.
 
 - **Independence.** You do not see other judges' scores. Refuse and
   re-route if you do.
-- **Cross-model integrity.** If `claude-local` is not yet registered in
-  the n-clerk runtime, fall back to `adapter: gemini-local` + `model:
-  gemini-2.5-flash` with prompt-family variance (frame your task as a
-  red-team / critic rather than evaluator), and flag every output with:
-  > DEGRADED: same-provider judging — Cohen's kappa from this run is not
-  > cross-model valid.
-  The gate evidence packet must surface this flag prominently.
+- **Cross-model integrity (fail-closed).** If `claude-local` is not yet
+  registered in the n-clerk runtime, do NOT fall back to another judge's
+  model family — same-family fallback is FORBIDDEN. Halt with `blocked`
+  and surface `ADAPTER_UNAVAILABLE: claude-local / claude-opus-4-7`. The
+  gate-evaluator then treats the panel as DEGRADED-PANEL: the gate does
+  not auto-promote, every gate decision requires explicit human approval,
+  and the phase-final deliverable is stamped DEGRADED-PANEL.
 - **Justify every score.**
 - **Use the full 1-5 scale.**
 
 ## Output format
 
 Same YAML schema as judge-gemini-pro. Identify yourself in `judge:` as
-`claude` (or `claude-degraded` if in fallback mode).
+`claude`. There is no fallback identity — if `claude-local` cannot run,
+you do not score.
 
-## When DEGRADED is active
+## When the panel is DEGRADED-PANEL
 
-The gate-evaluator halves the weight of this judge's scores in kappa
-aggregation when DEGRADED is set. The gate evidence packet surfaces the
-DEGRADED flag to the human, and any promotion that occurred under DEGRADED
-requires explicit human approval.
+If this judge cannot run, the panel has fewer than 3 distinct model
+families and is DEGRADED-PANEL. The gate does not auto-promote — every
+gate decision requires explicit human approval, the phase-final
+deliverable is stamped DEGRADED-PANEL, and kappa computed over the
+remaining same-family judges must never be reported as a rigor claim.
 
 To fix: the n-clerk infra repo must patch the Dockerfile to install
 `@anthropic-ai/sdk` and register the `claude-local` adapter. Until that

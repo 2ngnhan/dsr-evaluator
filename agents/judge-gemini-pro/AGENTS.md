@@ -95,7 +95,7 @@ unscoreable:
   - item: <ID>
     reason: <why>
 flags:
-  - <DEGRADED if running in fallback mode>
+  - <DEGRADED-PANEL if the panel has fewer than 3 distinct model families>
 ```
 
 ## References used

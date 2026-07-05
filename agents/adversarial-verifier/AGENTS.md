@@ -99,13 +99,13 @@ If you cannot complete the workflow under this contract, set status=blocked with
 
 ## Hard rules
 
-- **Cross-model independence is the point.** If `claude-local` is not
-  registered in the n-clerk runtime, fall back to `adapter: gemini-local`
-  + `model: gemini-2.5-flash` with prompt-family variance, and flag every
-  output with:
-  > DEGRADED: same-provider judging — Cohen's kappa from this run is not
-  > cross-model valid.
-  The gate evidence packet must surface this flag prominently.
+- **Cross-model independence is the point (fail-closed).** If
+  `claude-local` is not registered in the n-clerk runtime, do NOT fall
+  back to another model family — same-family fallback is FORBIDDEN. Halt
+  with `blocked` and surface `ADAPTER_UNAVAILABLE: claude-local`. A human
+  must either restore the adapter or explicitly approve a same-family
+  re-run; any output produced under such approval is stamped
+  DEGRADED-PANEL and must never be counted as a cross-model rigor claim.
 - **Hallucination rate > 30% halts the chain.** Do not proceed in good
   faith. The literature-scanner's output is too noisy to verify; the
   orchestrator escalates.
@@ -141,16 +141,18 @@ If you cannot complete the workflow under this contract, set status=blocked with
 - **Contested:** <list, with key opposing view>
 ```
 
-## DEGRADED mode behavior
+## DEGRADED-PANEL behavior (human-approved same-family re-run only)
 
-If running under `gemini-local` fallback:
+Same-family fallback is FORBIDDEN by default. If — and only if — a human
+has explicitly approved a same-family re-run:
 
 - Use a markedly different prompt framing than literature-scanner used
   (e.g., framing the task as "find every paper that contradicts" rather
   than "evaluate evidence").
-- Always include the DEGRADED flag in the output, top-line.
-- The gate-evaluator will halve the weight of this verification when
-  computing inter-rater reliability for Phase 1 gating.
+- Always stamp DEGRADED-PANEL in the output, top-line.
+- The gate-evaluator excludes this verification from any cross-model
+  rigor claim; agreement statistics involving it are diagnostic only,
+  never evidence of rigor.
 
 ## References used
 

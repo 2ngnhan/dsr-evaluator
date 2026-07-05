@@ -55,8 +55,13 @@ worth acting on.
 
 A same-provider panel (all three judges = Gemini) gives a kappa value but
 the value is uninformative — it measures how consistent a model is with
-itself, not how rigorous the artifact is. The `gate-evaluator` emits a
-DEGRADED flag in that case.
+itself, not how rigorous the artifact is. For that reason same-family
+fallback is FORBIDDEN: if fewer than 3 distinct model families are
+available, the gate does not auto-promote — every gate decision requires
+explicit human approval — the phase-final deliverable is stamped
+DEGRADED-PANEL, and kappa from the same-family panel is never reported as
+a rigor claim. The `bootstrap-guardrail` pre-flight checks adapter/family
+availability and refuses silent degradation.
 
 ### Safeguard 3 — `bootstrap-guardrail` skill
 

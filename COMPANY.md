@@ -275,7 +275,7 @@ Cross-cutting (gate panel):
 | Promote artifact to next phase (k >= 0.60) | gate-evaluator auto |
 | Override gate-evaluator decision | human only |
 | Modify any file in `references/` | human only — agents are read-only |
-| Use `claude-local` or `codex-local` adapter when not registered | DEGRADED fallback to `gemini-local` + `gemini-2.5-flash`, flag in packet |
+| Substitute a same-family judge when `claude-local` or `codex-local` is not registered | FORBIDDEN — panel becomes DEGRADED-PANEL; every gate decision requires explicit human approval |
 | Publish anywhere outside this company workspace | human only |
 
 ## Output language convention
@@ -306,16 +306,23 @@ be bilingual EN + VI.
 
 The cross-model judge panel requires `claude-local` and `codex-local` adapters
 to be registered in the n-clerk runtime. If either is missing at run time,
-the affected judge agent falls back to `gemini-local` + `gemini-2.5-flash`
-with a prompt-family variance trick, and emits a `DEGRADED` flag.
+the affected judge agent halts with `blocked` — same-family fallback is
+FORBIDDEN. A judge whose assigned adapter or model family is unavailable
+MUST NOT be silently re-run on another judge's model family.
 
-When the panel runs in `DEGRADED` mode, the gate evidence packet states
-prominently:
+If fewer than 3 distinct model families are available, the panel is
+DEGRADED-PANEL: the gate does not auto-promote — every gate decision
+requires explicit human approval — and the phase-final deliverable must be
+stamped DEGRADED-PANEL. The gate evidence packet states prominently:
 
-> DEGRADED: same-provider judging — Cohen's kappa from this run is not
-> cross-model valid.
+> DEGRADED-PANEL: fewer than 3 distinct model families — this gate cannot
+> auto-promote. Cohen's kappa from a same-family panel is not cross-model
+> valid and must never be reported as a rigor claim.
 
-A human must approve any promotion that occurred under `DEGRADED` mode.
+Cohen's kappa computed over a same-family panel may appear in the packet
+only as a diagnostic, explicitly labeled non-evidentiary. The
+`bootstrap-guardrail` pre-flight checks adapter/family availability and
+refuses silent degradation.
 
 To register the missing adapters, see the n-clerk infra repo's adapter
 registration docs and patch the Dockerfile to install `@anthropic-ai/sdk`
@@ -349,7 +356,8 @@ When you copy this template into a real capstone repo:
    if you want to adapt the 5-step workflow for a non-MBA context (the
    default targets MBA capstone scope).
 3. Patch the Dockerfile in the n-clerk infra repo to register `claude-local`
-   and `codex-local` adapters; otherwise the panel will always run DEGRADED.
+   and `codex-local` adapters; otherwise the panel will always be
+   DEGRADED-PANEL and no gate will auto-promote.
 4. Add project-specific vocabulary to a new file `references/project-vocab.md`
    (the `grid-populator` will read it when populating Cell 5).
 5. Edit `agents/discovery-orchestrator/AGENTS.md` to point at the actual

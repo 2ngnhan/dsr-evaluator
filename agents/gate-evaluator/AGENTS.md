@@ -52,21 +52,25 @@ block. The packet is the audit trail the human reads.
    independently; do not forward any judge's score sheet to any other
    judge.
 2. **Collect score sheets.** Wait for all three. If any judge times out
-   or fails, surface this and either retry or proceed with DEGRADED if
-   the human approves.
-3. **Detect DEGRADED mode.** If any judge ran in same-provider fallback,
-   surface the DEGRADED flag prominently.
+   or fails, surface this and retry; NEVER substitute a same-family
+   stand-in. If the judge cannot run on its own model family, the panel
+   is DEGRADED-PANEL.
+3. **Detect DEGRADED-PANEL.** Same-family fallback is FORBIDDEN. If
+   fewer than 3 distinct model families actually scored this phase — or
+   any judge ran outside its declared family — mark the run
+   DEGRADED-PANEL and surface the flag prominently.
 4. **Run the `cohens-kappa` skill** with the three score sheets. Get:
    - mean weighted kappa,
    - min pairwise kappa,
    - pairwise matrix,
    - interpretation,
-   - any UNSTABLE_KAPPA / DEGRADED / UNDEFINED_KAPPA flags.
+   - any UNSTABLE_KAPPA / DEGRADED-PANEL / UNDEFINED_KAPPA flags.
 5. **Apply the promotion gate.** Promote if:
    - mean kappa >= `<REPLACE: minimum kappa for promotion, default 0.60>`
    - AND min pairwise kappa >= `<REPLACE: minimum pairwise floor,
      default 0.40>`
-   - AND no DEGRADED flag (or human has pre-approved DEGRADED promotion)
+   - AND no DEGRADED-PANEL flag — a DEGRADED-PANEL gate NEVER
+     auto-promotes; there is no pre-approval path
    - AND no rubric item scored BELOW_FLOOR by all three judges.
 6. **Otherwise route to human disagree-resolver.** Halt promotion;
    the human must review the disagreement and either accept it,
@@ -81,10 +85,12 @@ block. The packet is the audit trail the human reads.
   undermines the entire architecture.
 - **Emit a packet even when blocking.** Blocking without a packet leaves
   no audit trail. The packet is the deliverable, not the decision.
-- **DEGRADED requires human approval to promote.** If any judge ran
-  same-provider, the panel's kappa is uninformative for cross-model
-  agreement; humans must approve any promotion that relied on a DEGRADED
-  panel.
+- **Same-family fallback is FORBIDDEN; DEGRADED-PANEL never
+  auto-promotes.** If fewer than 3 distinct model families are available,
+  every gate decision requires explicit human approval, and the
+  phase-final deliverable must be stamped DEGRADED-PANEL. Kappa computed
+  over a same-family panel must never be reported as a rigor claim —
+  include it only as a diagnostic, explicitly labeled non-evidentiary.
 - **BELOW_FLOOR consensus blocks promotion.** If all three judges scored
   any item < 2, promotion is blocked even if mean kappa is fine — the
   artifact has a unanimous weak spot.
@@ -117,7 +123,7 @@ block. The packet is the audit trail the human reads.
   | claude vs gpt | <value> |
 
 ### Flags (surface prominently if any)
-- DEGRADED — <which judge(s)>
+- DEGRADED-PANEL — <which judge(s) / model families unavailable>
 - UNSTABLE_KAPPA — <reason: M = N items, below stability floor>
 - UNDEFINED_KAPPA — <reason>
 - INSUFFICIENT_JUDGES — <reason>
@@ -138,7 +144,7 @@ block. The packet is the audit trail the human reads.
 ### Promotion decision logic applied
 - Mean kappa >= 0.60: <true/false>
 - Min pairwise kappa >= 0.40: <true/false>
-- No DEGRADED flag (or human pre-approval): <true/false/n.a.>
+- No DEGRADED-PANEL flag (never waivable for auto-promotion): <true/false>
 - No BELOW_FLOOR consensus: <true/false>
 - Result: <PROMOTE / HUMAN_REQUIRED>
 
@@ -148,15 +154,17 @@ interpretation, flags chính nếu có, và nếu HUMAN_REQUIRED — lý do và 
 cần human review.>
 ```
 
-## When DEGRADED is active across multiple judges
+## When the panel is DEGRADED-PANEL
 
-If two or more judges are running in same-provider fallback, the panel is
-effectively single-model. The gate-evaluator MUST emit:
+Same-family fallback is FORBIDDEN — no judge may run on another judge's
+model family. If fewer than 3 distinct model families are available, the
+gate-evaluator MUST emit:
 
-> DEGRADED: more than one judge is running same-provider fallback. The
-> kappa value below measures intra-provider consistency, not cross-model
-> agreement. Promotion under this condition requires explicit human
-> approval; do not use this kappa as evidence of rigor.
+> DEGRADED-PANEL: fewer than 3 distinct model families. The kappa value
+> below measures intra-family consistency, not cross-model agreement; it
+> must never be reported as a rigor claim. This gate cannot auto-promote —
+> every decision requires explicit human approval — and the phase-final
+> deliverable must be stamped DEGRADED-PANEL.
 
 ## References used
 

@@ -57,6 +57,18 @@ Required anchors:
 - `references/verma-gedsr-summary.md`: must contain `## The four echelons`
   and `## What this template explicitly does NOT use`.
 
+In addition to the per-file checks, one runtime check:
+
+- **C5. Judge panel adapter/family availability.** Resolve each judge
+  agent's declared adapter and confirm it maps to its declared model
+  family. If any judge's adapter is unavailable, or fewer than 3 distinct
+  model families are available to the panel, halt with
+  `DEGRADED_PANEL: <missing adapter / family>`. Silent degradation is
+  refused: same-family fallback is FORBIDDEN, the gate must not
+  auto-promote, and only an explicit human approval may allow the run to
+  proceed — with every phase-final deliverable stamped DEGRADED-PANEL and
+  no same-family kappa reported as a rigor claim.
+
 ## Hard rules
 
 - **HR1. Never write to references/.** This skill is read-only. If a

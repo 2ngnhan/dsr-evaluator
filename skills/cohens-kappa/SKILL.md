@@ -77,10 +77,15 @@ Steps:
 - **M < <REPLACE: minimum items, default 10>.** Compute kappa but flag
   `UNSTABLE_KAPPA: low item count, kappa estimate has high variance`.
   Always surface this flag in the gate evidence packet.
+- **Same-family panel.** Kappa computed over judges from the same model
+  family must never be reported as a rigor claim. Emit it only as a
+  diagnostic labeled non-evidentiary, set the DEGRADED-PANEL flag, and
+  route the gate decision to explicit human approval — never auto-promote.
 - **Identical scores across all judges (every cell agrees).** The kappa
   is 1.0 but this can indicate the panel is degenerate (e.g., all three
-  judges are the same model under DEGRADED mode). Cross-check whether
-  DEGRADED is flagged; if so, do not treat kappa = 1 as meaningful.
+  judges are the same model family under DEGRADED-PANEL). Cross-check
+  whether DEGRADED-PANEL is flagged; if so, do not treat kappa = 1 as
+  meaningful.
 - **Ties in marginal distribution producing `1 - p_e = 0`.** Kappa is
   undefined. Halt with `UNDEFINED_KAPPA` and surface the marginal
   distribution; this typically means one score (often 3) dominates and
@@ -106,7 +111,7 @@ kappa:
   decision: <promote | human-required>
 flags:
   - UNSTABLE_KAPPA   # only if M below stability floor
-  - DEGRADED         # only if any judge is in fallback mode
+  - DEGRADED-PANEL   # fewer than 3 distinct model families — kappa is non-evidentiary, never a rigor claim
   - INSUFFICIENT_JUDGES
   - UNDEFINED_KAPPA
 items_scored: <int>
